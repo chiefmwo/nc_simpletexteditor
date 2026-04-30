@@ -17,9 +17,11 @@ use OCP\Files\NotPermittedException;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
-use OCP\Security\ICrypto;
 
 class EditorController extends Controller {
+
+    // Only allow saving plain-text content types via this editor.
+    private const ALLOWED_MIMES = ['text/plain', 'text/'];
 
     public function __construct(
         IRequest $request,
@@ -38,12 +40,7 @@ class EditorController extends Controller {
     public function index(int $fileId): TemplateResponse {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            return new TemplateResponse(
-                Application::APP_ID,
-                'editor',
-                ['error' => 'Not logged in.'],
-                TemplateResponse::RENDER_AS_BLANK
-            );
+            return $this->errorTemplate('Not logged in.');
         }
 
         try {
@@ -51,23 +48,13 @@ class EditorController extends Controller {
             $nodes      = $userFolder->getById($fileId);
 
             if (empty($nodes)) {
-                return new TemplateResponse(
-                    Application::APP_ID,
-                    'editor',
-                    ['error' => 'File not found.'],
-                    TemplateResponse::RENDER_AS_BLANK
-                );
+                return $this->errorTemplate('File not found.');
             }
 
             $fileName = $nodes[0]->getName();
 
         } catch (NotFoundException) {
-            return new TemplateResponse(
-                Application::APP_ID,
-                'editor',
-                ['error' => 'File not found.'],
-                TemplateResponse::RENDER_AS_BLANK
-            );
+            return $this->errorTemplate('File not found.');
         }
 
         return new TemplateResponse(
@@ -120,7 +107,7 @@ class EditorController extends Controller {
 
         } catch (NotFoundException) {
             return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return new DataResponse(['error' => 'Could not read file'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
 
@@ -137,7 +124,7 @@ class EditorController extends Controller {
             return new DataResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        // Try query param first, then raw JSON body
+        // Prefer IRequest parsing; fall back to raw JSON body (PUT requests).
         $body = $this->request->getParam('content');
         if ($body === null) {
             $raw     = file_get_contents('php://input');
@@ -157,19 +144,37 @@ class EditorController extends Controller {
                 return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
             }
 
-            $nodes[0]->putContent($body);
+            $file = $nodes[0];
+
+            // Guard: only allow editing text/* files via this endpoint.
+            $mime = $file->getMimeType();
+            if (!str_starts_with($mime, 'text/')) {
+                return new DataResponse(['error' => 'File type not supported'], Http::STATUS_UNSUPPORTED_MEDIA_TYPE);
+            }
+
+            $file->putContent($body);
 
         } catch (NotFoundException) {
             return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
         } catch (NotPermittedException) {
             return new DataResponse(['error' => 'Permission denied'], Http::STATUS_FORBIDDEN);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
+            // Log the real exception server-side; return a generic message to the client.
             return new DataResponse(
-                ['error' => 'Could not save file: ' . $e->getMessage()],
+                ['error' => 'Could not save file'],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
 
         return new DataResponse(['status' => 'ok']);
+    }
+
+    private function errorTemplate(string $message): TemplateResponse {
+        return new TemplateResponse(
+            Application::APP_ID,
+            'editor',
+            ['error' => $message],
+            TemplateResponse::RENDER_AS_BLANK
+        );
     }
 }

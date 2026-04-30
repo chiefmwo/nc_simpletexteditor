@@ -6,14 +6,15 @@
  * @var array $_ Variables from EditorController::index()
  */
 
+// All values are escaped at the assignment site so every echo below is safe.
 $fileId   = isset($_['fileId'])   ? (int)$_['fileId']   : 0;
-$fileName = isset($_['fileName']) ? htmlspecialchars($_['fileName'], ENT_QUOTES) : '';
-$error    = isset($_['error'])    ? htmlspecialchars($_['error'],    ENT_QUOTES) : '';
-$loadUrl  = isset($_['loadUrl'])  ? $_['loadUrl']  : '';
-$saveUrl  = isset($_['saveUrl'])  ? $_['saveUrl']  : '';
-$cssUrl   = isset($_['cssUrl'])   ? $_['cssUrl']   : '';
-$jsUrl    = isset($_['jsUrl'])    ? $_['jsUrl']    : '';
-$token    = isset($_['token'])    ? $_['token']    : '';
+$fileName = isset($_['fileName']) ? htmlspecialchars($_['fileName'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$error    = isset($_['error'])    ? htmlspecialchars($_['error'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$loadUrl  = isset($_['loadUrl'])  ? htmlspecialchars($_['loadUrl'],  ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$saveUrl  = isset($_['saveUrl'])  ? htmlspecialchars($_['saveUrl'],  ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$cssUrl   = isset($_['cssUrl'])   ? htmlspecialchars($_['cssUrl'],   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$jsUrl    = isset($_['jsUrl'])    ? htmlspecialchars($_['jsUrl'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$token    = isset($_['token'])    ? htmlspecialchars($_['token'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,8 +22,8 @@ $token    = isset($_['token'])    ? $_['token']    : '';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo $fileName; ?> – Simple Text Editor</title>
-    <?php if ($cssUrl): ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssUrl, ENT_QUOTES); ?>">
+    <?php if ($cssUrl !== ''): ?>
+    <link rel="stylesheet" href="<?php echo $cssUrl; ?>">
     <?php endif; ?>
 </head>
 <body class="ste-body">
@@ -34,15 +35,15 @@ $token    = isset($_['token'])    ? $_['token']    : '';
 <div id="ste-app"
      data-file-id="<?php echo $fileId; ?>"
      data-file-name="<?php echo $fileName; ?>"
-     data-load-url="<?php echo htmlspecialchars($loadUrl, ENT_QUOTES); ?>"
-     data-save-url="<?php echo htmlspecialchars($saveUrl, ENT_QUOTES); ?>"
-     data-request-token="<?php echo htmlspecialchars($token, ENT_QUOTES); ?>"
+     data-load-url="<?php echo $loadUrl; ?>"
+     data-save-url="<?php echo $saveUrl; ?>"
+     data-request-token="<?php echo $token; ?>"
 ></div>
 
 <?php endif; ?>
 
-<?php if ($jsUrl): ?>
-<script src="<?php echo htmlspecialchars($jsUrl, ENT_QUOTES); ?>"></script>
+<?php if ($jsUrl !== ''): ?>
+<script src="<?php echo $jsUrl; ?>"></script>
 <?php endif; ?>
 
 </body>

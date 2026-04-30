@@ -3,7 +3,7 @@
  * Mounts itself into #ste-app and communicates with the PHP backend.
  */
 
-// ─── DOM skeleton ────────────────────────────────────────────────────────────
+// ─── DOM skeleton ─────────────────────────────────────────────────────────────
 
 function buildUI(container) {
 	container.innerHTML = `
@@ -14,21 +14,22 @@ function buildUI(container) {
     <div class="ste-toolbar-group">
       <button id="ste-save-btn" class="ste-btn ste-btn-primary" title="Save (Ctrl+S)">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/>
           <polyline points="7 3 7 8 15 8"/>
         </svg>
         Speichern
       </button>
-      <span id="ste-status" class="ste-status"></span>
+      <span id="ste-status" class="ste-status" aria-live="polite"></span>
     </div>
 
     <div class="ste-toolbar-group ste-search-group">
-      <input id="ste-search-input" class="ste-input" type="text" placeholder="Suchen…" aria-label="Suchen">
-      <button id="ste-prev-btn"  class="ste-btn" title="Vorheriger Treffer (Shift+Enter)">&#8679;</button>
-      <button id="ste-next-btn"  class="ste-btn" title="Nächster Treffer (Enter)">&#8681;</button>
-      <span id="ste-match-info" class="ste-match-info"></span>
+      <input id="ste-search-input" class="ste-input" type="search" placeholder="Suchen…" aria-label="Suchen">
+      <button id="ste-prev-btn"  class="ste-btn" title="Vorheriger Treffer (Shift+Enter)" aria-label="Vorheriger Treffer">↑</button>
+      <button id="ste-next-btn"  class="ste-btn" title="Nächster Treffer (Enter)"         aria-label="Nächster Treffer">↓</button>
+      <span id="ste-match-info" class="ste-match-info" aria-live="polite"></span>
     </div>
 
     <div class="ste-toolbar-group ste-replace-group">
@@ -43,106 +44,123 @@ function buildUI(container) {
 </div>`
 }
 
-// ─── Search state ─────────────────────────────────────────────────────────────
-
-const searchState = {
-	term: '',
-	matches: [],   // array of start-indices
-	current: -1,
-}
+// ─── Search helpers ───────────────────────────────────────────────────────────
 
 function buildMatches(text, term) {
 	if (!term) return []
 	const matches = []
-	let idx = 0
 	const lower = text.toLowerCase()
 	const lowerTerm = term.toLowerCase()
+	const termLen = lowerTerm.length
+	let idx = 0
 	while ((idx = lower.indexOf(lowerTerm, idx)) !== -1) {
 		matches.push(idx)
-		idx += lowerTerm.length
+		idx += termLen
 	}
 	return matches
 }
 
-function highlightMatch(textarea, matches, index) {
-	if (matches.length === 0 || index < 0) return
+function highlightMatch(textarea, matches, index, termLen) {
+	if (!matches.length || index < 0) return
 	const start = matches[index]
-	const end = start + searchState.term.length
 	textarea.focus()
-	textarea.setSelectionRange(start, end)
-	// Scroll the match into view
-	const lineHeight = parseInt(getComputedStyle(textarea).lineHeight, 10) || 20
-	const lines = textarea.value.substring(0, start).split('\n').length
-	textarea.scrollTop = Math.max(0, (lines - 3) * lineHeight)
+	textarea.setSelectionRange(start, start + termLen)
+	// scrollTop estimation: avoid O(n) split by using the caret position
+	// natively exposed by the browser after setSelectionRange.
+	// We nudge scrollTop only when the caret is outside the visible area.
+	const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20
+	const visibleLines = Math.floor(textarea.clientHeight / lineHeight)
+	// Approximate line of the match without splitting the whole string:
+	// count newlines only up to `start` using lastIndexOf in a loop – still
+	// O(k) where k = match position, but avoids allocating a new array.
+	let linesBefore = 0
+	let pos = -1
+	while ((pos = textarea.value.indexOf('\n', pos + 1)) !== -1 && pos < start) {
+		linesBefore++
+	}
+	const targetScrollTop = Math.max(0, (linesBefore - Math.floor(visibleLines / 2)) * lineHeight)
+	textarea.scrollTop = targetScrollTop
 }
 
 function updateMatchInfo(el, matches, current) {
-	if (!searchState.term) {
-		el.textContent = ''
+	if (!matches.length) {
+		el.textContent = matches._searched ? '0 Treffer' : ''
 		return
 	}
-	el.textContent = matches.length === 0
-		? '0 Treffer'
-		: `${current + 1} / ${matches.length}`
+	el.textContent = `${current + 1} / ${matches.length}`
 }
 
-// ─── Autosave ────────────────────────────────────────────────────────────────
+// ─── Autosave / debounce ──────────────────────────────────────────────────────
 
-let autosaveTimer = null
-
-function scheduleAutosave(saveCallback) {
-	clearTimeout(autosaveTimer)
-	autosaveTimer = setTimeout(saveCallback, 1500)
+function debounce(fn, delay) {
+	let timer = null
+	return (...args) => {
+		clearTimeout(timer)
+		timer = setTimeout(() => fn(...args), delay)
+	}
 }
 
-// ─── Status display ──────────────────────────────────────────────────────────
+// ─── Status display ───────────────────────────────────────────────────────────
 
-let statusTimer = null
-
-function showStatus(el, msg, isError = false) {
-	clearTimeout(statusTimer)
-	el.textContent = msg
-	el.className = 'ste-status' + (isError ? ' ste-status-error' : ' ste-status-ok')
-	statusTimer = setTimeout(() => { el.textContent = '' ; el.className = 'ste-status' }, 3000)
+function makeStatusShower(el) {
+	let timer = null
+	return (msg, isError = false) => {
+		clearTimeout(timer)
+		el.textContent = msg
+		el.className = 'ste-status' + (isError ? ' ste-status-error' : ' ste-status-ok')
+		timer = setTimeout(() => { el.textContent = ''; el.className = 'ste-status' }, 3000)
+	}
 }
 
-// ─── API helpers ─────────────────────────────────────────────────────────────
+// ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function loadFile(url, requestToken) {
 	const res = await fetch(url, {
-		headers: {
-			'requesttoken': requestToken,
-			'Accept': 'application/json',
-		},
+		headers: { requesttoken: requestToken, Accept: 'application/json' },
 	})
 	if (!res.ok) throw new Error(`HTTP ${res.status}`)
 	const data = await res.json()
 	return data.content ?? ''
 }
 
-async function saveFile(url, content, requestToken) {
-	const res = await fetch(url, {
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json',
-			'requesttoken': requestToken,
+// Returns a cancel function; calling it aborts any in-flight request.
+function makeSaveFile(url, requestToken) {
+	let controller = null
+	return {
+		save: async (content) => {
+			// Cancel any still-running save before starting a new one.
+			if (controller) controller.abort()
+			controller = new AbortController()
+			const signal = controller.signal
+			const res = await fetch(url, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					requesttoken: requestToken,
+				},
+				body: JSON.stringify({ content }),
+				signal,
+			})
+			controller = null
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}))
+				throw new Error(data.error ?? `HTTP ${res.status}`)
+			}
 		},
-		body: JSON.stringify({ content }),
-	})
-	if (!res.ok) {
-		const data = await res.json().catch(() => ({}))
-		throw new Error(data.error ?? `HTTP ${res.status}`)
+		abort: () => { if (controller) controller.abort() },
 	}
 }
 
-// ─── Mount ───────────────────────────────────────────────────────────────────
+// ─── Mount ────────────────────────────────────────────────────────────────────
 
 export function mountEditor(container) {
-	const fileId       = container.dataset.fileId
-	const fileName     = container.dataset.fileName
-	const loadUrl      = container.dataset.loadUrl
-	const saveUrl      = container.dataset.saveUrl
+	const fileName     = container.dataset.fileName   || ''
+	const loadUrl      = container.dataset.loadUrl    || ''
+	const saveUrl      = container.dataset.saveUrl    || ''
 	const requestToken = container.dataset.requestToken
+		|| document.querySelector('head[data-requesttoken]')?.dataset.requesttoken
+		|| window.OC?.requestToken
+		|| ''
 
 	buildUI(container)
 
@@ -160,60 +178,69 @@ export function mountEditor(container) {
 
 	filenameLbl.textContent = fileName
 
+	// Local search state – not shared across mounts
+	const state = { term: '', matches: [], current: -1 }
+
+	const showStatus = makeStatusShower(statusEl)
+	const saver = makeSaveFile(saveUrl, requestToken)
+
 	// ── Load content ────────────────────────────────────────────────────────
-	loadFile(loadUrl, requestToken)
-		.then(content => { textarea.value = content })
-		.catch(err => showStatus(statusEl, `Ladefehler: ${err.message}`, true))
+	if (loadUrl) {
+		loadFile(loadUrl, requestToken)
+			.then(content => { textarea.value = content })
+			.catch(err => showStatus(`Ladefehler: ${err.message}`, true))
+	}
 
 	// ── Save ────────────────────────────────────────────────────────────────
 	const doSave = () => {
-		saveFile(saveUrl, textarea.value, requestToken)
-			.then(() => showStatus(statusEl, 'Gespeichert ✓'))
-			.catch(err => showStatus(statusEl, `Fehler: ${err.message}`, true))
+		saver.save(textarea.value)
+			.then(() => showStatus('Gespeichert ✓'))
+			.catch(err => {
+				if (err.name !== 'AbortError') showStatus(`Fehler: ${err.message}`, true)
+			})
 	}
 
+	const debouncedAutosave = debounce(doSave, 1500)
+
 	saveBtn.addEventListener('click', doSave)
+	textarea.addEventListener('input', debouncedAutosave)
 
-	textarea.addEventListener('input', () => scheduleAutosave(doSave))
-
-	document.addEventListener('keydown', e => {
+	// Global Ctrl+S – stored for cleanup
+	const onKeydown = (e) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault()
 			doSave()
 		}
-	})
-
-	// ── Search ──────────────────────────────────────────────────────────────
-	const runSearch = () => {
-		const term = searchInput.value
-		searchState.term = term
-		searchState.matches = buildMatches(textarea.value, term)
-		searchState.current = searchState.matches.length > 0 ? 0 : -1
-		if (searchState.current >= 0) highlightMatch(textarea, searchState.matches, searchState.current)
-		updateMatchInfo(matchInfo, searchState.matches, searchState.current)
 	}
+	document.addEventListener('keydown', onKeydown)
+
+	// ── Search (debounced 150 ms to avoid scanning on every keystroke) ──────
+	const runSearch = debounce(() => {
+		state.term    = searchInput.value
+		state.matches = buildMatches(textarea.value, state.term)
+		state.matches._searched = !!state.term
+		state.current = state.matches.length > 0 ? 0 : -1
+		if (state.current >= 0) highlightMatch(textarea, state.matches, state.current, state.term.length)
+		updateMatchInfo(matchInfo, state.matches, state.current)
+	}, 150)
 
 	searchInput.addEventListener('input', runSearch)
-
 	searchInput.addEventListener('keydown', e => {
-		if (e.key === 'Enter') {
-			e.preventDefault()
-			e.shiftKey ? goPrev() : goNext()
-		}
+		if (e.key === 'Enter') { e.preventDefault(); e.shiftKey ? goPrev() : goNext() }
 	})
 
 	const goNext = () => {
-		if (searchState.matches.length === 0) return
-		searchState.current = (searchState.current + 1) % searchState.matches.length
-		highlightMatch(textarea, searchState.matches, searchState.current)
-		updateMatchInfo(matchInfo, searchState.matches, searchState.current)
+		if (!state.matches.length) return
+		state.current = (state.current + 1) % state.matches.length
+		highlightMatch(textarea, state.matches, state.current, state.term.length)
+		updateMatchInfo(matchInfo, state.matches, state.current)
 	}
 
 	const goPrev = () => {
-		if (searchState.matches.length === 0) return
-		searchState.current = (searchState.current - 1 + searchState.matches.length) % searchState.matches.length
-		highlightMatch(textarea, searchState.matches, searchState.current)
-		updateMatchInfo(matchInfo, searchState.matches, searchState.current)
+		if (!state.matches.length) return
+		state.current = (state.current - 1 + state.matches.length) % state.matches.length
+		highlightMatch(textarea, state.matches, state.current, state.term.length)
+		updateMatchInfo(matchInfo, state.matches, state.current)
 	}
 
 	nextBtn.addEventListener('click', goNext)
@@ -221,21 +248,28 @@ export function mountEditor(container) {
 
 	// ── Replace ─────────────────────────────────────────────────────────────
 	replaceBtn.addEventListener('click', () => {
-		if (searchState.matches.length === 0 || searchState.current < 0) return
-		const start = searchState.matches[searchState.current]
-		const end   = start + searchState.term.length
+		if (!state.matches.length || state.current < 0) return
+		const start = state.matches[state.current]
+		const end   = start + state.term.length
 		const val   = textarea.value
 		textarea.value = val.substring(0, start) + replaceInput.value + val.substring(end)
-		// Re-run search to update match list
 		runSearch()
-		scheduleAutosave(doSave)
+		debouncedAutosave()
 	})
 
 	replAllBtn.addEventListener('click', () => {
-		if (!searchState.term) return
-		const escaped = searchState.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-		textarea.value = textarea.value.replace(new RegExp(escaped, 'gi'), replaceInput.value)
+		if (!state.term) return
+		// Compile the regex once per click (not in a loop)
+		const escaped = state.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+		const re = new RegExp(escaped, 'gi')
+		textarea.value = textarea.value.replace(re, replaceInput.value)
 		runSearch()
-		scheduleAutosave(doSave)
+		debouncedAutosave()
 	})
+
+	// ── Cleanup (call if editor is ever unmounted) ───────────────────────────
+	return () => {
+		document.removeEventListener('keydown', onKeydown)
+		saver.abort()
+	}
 }

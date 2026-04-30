@@ -9,38 +9,36 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js'],
-    // Suppress Node.js polyfill warnings for browser-only deps
-    fallback: {
-      path: false,
-      fs: false,
-    },
+    fallback: { path: false, fs: false },
   },
   module: {
     rules: [
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        // Only transpile our own source, not node_modules
+        include: path.resolve(__dirname, 'src'),
         use: {
           loader: 'babel-loader',
           options: {
             presets: [
-              ['@babel/preset-env', { targets: '> 1%, not dead' }],
+              ['@babel/preset-env', { targets: '> 1%, not dead, not ie 11' }],
             ],
           },
         },
       },
     ],
   },
-  // Mark Nextcloud globals as externals so the bundle stays slim.
-  // These are provided by the Nextcloud server at runtime.
+  // Nextcloud globals provided at runtime – don't bundle them
   externals: {
-    '@nextcloud/auth':     'OC',
-    '@nextcloud/initial-state': 'OCA.InitialState',
+    '@nextcloud/auth':   'OC',
   },
   optimization: {
     minimize: true,
   },
+  // Keep bundle-size warnings visible so regressions are caught early
   performance: {
-    hints: false,
+    hints: 'warning',
+    maxEntrypointSize: 256 * 1024,
+    maxAssetSize:      256 * 1024,
   },
 }

@@ -58,12 +58,11 @@
         var action = buildFileAction();
 
         // Primary: shared @nextcloud/event-bus global (Nextcloud 30+).
-        // The Files app subscribes to 'files:action:updated' and adds the action
-        // from the event payload, making cross-bundle registration possible.
+        // The Files app (Vue SPA) subscribes to 'files:action:updated' and reads
+        // the action object directly from the event payload.
         var bus = window.__nc_event_bus;
         if (bus && typeof bus.emit === 'function') {
             bus.emit('files:action:updated', { action: action });
-            return;
         }
 
         // Fallback: legacy OCA.Files.fileActions shim (Nextcloud < 30)
@@ -84,21 +83,27 @@
         }
     }
 
-    // Register once at DOMContentLoaded, then once more after a tick in case
-    // the Files app initialises its event bus asynchronously.
-    var _pluginRegistered = false;
-    function initFilesPlugin() {
-        if (_pluginRegistered) return;
-        _pluginRegistered = true;
-        try { tryRegisterFileAction(); } catch (e) { /* intentionally silent */ }
+    // The Files app is a Vue SPA that mounts asynchronously after DOMContentLoaded.
+    // We emit on a backoff schedule so we catch the window after the Vue app has
+    // set up its event-bus subscriptions, regardless of client/server speed.
+    // Emitting more than once is harmless – the Files app deduplicates by action id.
+    var _retryDelays = [0, 250, 1000, 3000];
+    var _retryCount  = 0;
+
+    function scheduleRetries() {
+        _retryDelays.forEach(function (delay) {
+            setTimeout(function () {
+                _retryCount++;
+                try { tryRegisterFileAction(); } catch (e) { /* intentionally silent */ }
+            }, delay);
+        });
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initFilesPlugin);
+        document.addEventListener('DOMContentLoaded', scheduleRetries);
     } else {
-        initFilesPlugin();
+        scheduleRetries();
     }
-    setTimeout(initFilesPlugin, 0);
 
     // =========================================================================
     // 2.  EDITOR UI  (only active when #ste-app exists in the DOM)

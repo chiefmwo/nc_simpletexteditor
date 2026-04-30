@@ -10,7 +10,6 @@ on:
       - 'webpack.config.js'
   workflow_dispatch:
 
-# Use Node.js 24 for the action runners (suppresses the Node 20 warning)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -28,12 +27,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          # cache: 'npm' requires package-lock.json; omitted until the first
-          # build commits it back.  Re-add once package-lock.json exists.
 
       - name: Install dependencies
-        # npm install (not npm ci) so the run succeeds without a lock file.
-        # The generated package-lock.json is committed back below.
         run: npm install
 
       - name: Build bundle
@@ -43,7 +38,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'ci: rebuild js/editor-bundle.js [skip ci]'
-          # Also commit package-lock.json so future runs can use npm ci + cache
-          file_pattern: 'js/editor-bundle.js package-lock.json'
+          # Commit everything webpack produced in js/ plus the lock file
+          file_pattern: 'js/ package-lock.json'
           commit_user_name:  'github-actions[bot]'
           commit_user_email: 'github-actions[bot]@users.noreply.github.com'

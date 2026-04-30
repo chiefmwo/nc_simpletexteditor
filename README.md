@@ -119,8 +119,3 @@ simpletexteditor/
 
 PHP 8.1 or later required.
 
----
-
-## License
-
-AGPL-3.0-or-later – see [LICENSE](LICENSE).

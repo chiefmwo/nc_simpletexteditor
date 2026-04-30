@@ -1,0 +1,192 @@
+/* ── JetBrains Mono (bundled, no external requests) ── */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../css/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Reset / base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Override Nextcloud body styles inside our full-page view */
+.ste-body,
+.ste-body #content,
+.ste-body #content-wrapper {
+  background: #121826;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Layout ── */
+.ste-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #121826;
+  color: #e5e7eb;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Cascadia Code', Consolas, monospace;
+}
+
+/* ── Toolbar ── */
+.ste-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1a2338;
+  border-bottom: 1px solid #2a3550;
+  flex-shrink: 0;
+  min-height: 52px;
+}
+
+.ste-filename {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+  flex-shrink: 0;
+}
+
+.ste-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ste-search-group {
+  flex-grow: 1;
+}
+
+/* ── Buttons ── */
+.ste-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid #2a3550;
+  border-radius: 6px;
+  background: #1e2d45;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.ste-btn:hover {
+  background: #263554;
+  border-color: #3b82f6;
+}
+
+.ste-btn:active {
+  background: #1a2e55;
+}
+
+.ste-btn-primary {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ste-btn-primary:hover {
+  background: #2563eb;
+}
+
+/* ── Inputs ── */
+.ste-input {
+  padding: 5px 10px;
+  border: 1px solid #2a3550;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e5e7eb;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 140px;
+}
+
+.ste-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.ste-input::placeholder {
+  color: #475569;
+}
+
+/* ── Match info / status ── */
+.ste-match-info {
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.ste-status {
+  font-size: 0.78rem;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.ste-status-ok    { color: #22c55e; }
+.ste-status-error { color: #f87171; }
+
+/* ── Editor textarea ── */
+.ste-editor {
+  flex: 1;
+  width: 100%;
+  padding: 16px 20px;
+  background: #161f2e;
+  color: #e5e7eb;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Cascadia Code', Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  border: none;
+  outline: none;
+  resize: none;
+  tab-size: 4;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow: auto;
+  caret-color: #3b82f6;
+}
+
+.ste-editor:focus {
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+/* ── Selection highlight ── */
+.ste-editor::selection {
+  background: rgba(59, 130, 246, 0.45);
+}
+
+/* ── Error banner ── */
+.ste-error {
+  margin: 24px auto;
+  max-width: 500px;
+  padding: 16px 20px;
+  background: #450a0a;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+/* ── Scrollbars (Webkit) ── */
+.ste-editor::-webkit-scrollbar { width: 8px; height: 8px; }
+.ste-editor::-webkit-scrollbar-track { background: #121826; }
+.ste-editor::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 4px; }
+.ste-editor::-webkit-scrollbar-thumb:hover { background: #3b82f6; }

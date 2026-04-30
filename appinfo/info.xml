@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>simpletexteditor</id>
+    <name>Simple Text Editor</name>
+    <summary>A modern, dark-themed plain-text editor with search and replace</summary>
+    <description><![CDATA[Edit plain-text files directly in Nextcloud with a fast, keyboard-friendly editor featuring search, replace, and autosave.]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author mail="prellball-meister@gmx.net">simpletexteditor</author>
+    <namespace>SimpleTextEditor</namespace>
+    <category>files</category>
+    <bugs>https://github.com/example/simpletexteditor/issues</bugs>
+    <dependencies>
+        <nextcloud min-version="30" max-version="33"/>
+        <php min-version="8.1"/>
+    </dependencies>
+</info>

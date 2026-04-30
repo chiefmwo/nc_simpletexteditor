@@ -12,8 +12,7 @@
     "@nextcloud/router": "^3.0.1"
   },
   "devDependencies": {
-    "@nextcloud/webpack-vue-config": "^6.1.1",
-    "webpack-cli":                   "^5.1.4"
+    "@nextcloud/webpack-vue-config": "^6.1.1"
   },
   "engines": {
     "node": ">=18",

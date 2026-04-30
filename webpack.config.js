@@ -1,44 +1,23 @@
 const path = require('path')
 
+// @nextcloud/webpack-vue-config sets up the Nextcloud-standard webpack
+// environment: Babel transpilation, module aliases, optimization settings
+// and – crucially – ensures @nextcloud/* packages are treated as singletons
+// so registerFileAction() shares the same module instance as the Files app.
+const webpackConfig = require('@nextcloud/webpack-vue-config')
+
 module.exports = {
-  entry: './src/main.js',
-  output: {
-    path: path.resolve(__dirname, 'js'),
-    filename: 'editor-bundle.js',
-    clean: false,
-  },
-  resolve: {
-    extensions: ['.js'],
-    fallback: { path: false, fs: false },
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        // Only transpile our own source, not node_modules
-        include: path.resolve(__dirname, 'src'),
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env', { targets: '> 1%, not dead, not ie 11' }],
-            ],
-          },
-        },
-      },
-    ],
-  },
-  // Nextcloud globals provided at runtime – don't bundle them
-  externals: {
-    '@nextcloud/auth':   'OC',
-  },
-  optimization: {
-    minimize: true,
-  },
-  // Keep bundle-size warnings visible so regressions are caught early
-  performance: {
-    hints: 'warning',
-    maxEntrypointSize: 256 * 1024,
-    maxAssetSize:      256 * 1024,
-  },
+	...webpackConfig,
+
+	// Single entry → js/editor-bundle.js
+	entry: {
+		'editor-bundle': path.join(__dirname, 'src', 'main.js'),
+	},
+
+	// Keep bundle-size warnings so regressions are visible in CI
+	performance: {
+		hints:              'warning',
+		maxEntrypointSize:  512 * 1024,
+		maxAssetSize:       512 * 1024,
+	},
 }

@@ -1,0 +1,46 @@
+name: Build JS bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'webpack.config.js'
+  # Allow triggering manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push the built bundle back
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Use a token that allows pushing back to the repo.
+          # The default GITHUB_TOKEN is sufficient for public repos and most
+          # private repos – no extra secret needed.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build bundle
+        run: npm run build
+
+      - name: Commit rebuilt bundle
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'ci: rebuild js/editor-bundle.js [skip ci]'
+          file_pattern: 'js/editor-bundle.js'
+          commit_user_name:  'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'

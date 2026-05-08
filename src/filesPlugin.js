@@ -27,23 +27,31 @@ export function registerFilesPlugin() {
 
 		// Only show for text/* files the user may at least read
 		enabled(nodes) {
-			if (!nodes || nodes.length !== 1) return false
-			const node = nodes[0]
-			if (!node.mime?.startsWith('text/')) return false
-			return (node.permissions & Permission.READ) !== 0
+			const ok = nodes
+				&& nodes.length === 1
+				&& nodes[0].mime?.startsWith('text/')
+				&& (nodes[0].permissions & Permission.READ) !== 0
+			console.info('[simpletexteditor] enabled() ->', ok, {
+				count: nodes?.length,
+				mime: nodes?.[0]?.mime,
+				permissions: nodes?.[0]?.permissions,
+			})
+			return !!ok
 		},
 
-		// Fires on file click (DefaultType.DEFAULT) and in the context menu
-		async exec({ node }) {
-			const fileId = node.fileid ?? node.fileId
+		// Fires on file click (DefaultType.DEFAULT)
+		async exec(node) {
+			const fileId = node?.fileid ?? node?.fileId
+			console.info('[simpletexteditor] exec() ->', { fileId, node })
 			if (!fileId) return null
 			window.location.href = generateUrl(`/apps/simpletexteditor/edit/${fileId}`)
 			return null
 		},
 
-		// DEFAULT = fires on single click; also stays visible in context menu
+		// Claim the single-click default for matching files
 		default: DefaultType.DEFAULT,
 
-		order: 20,
+		// Very low order to win against any other default action
+		order: -1000,
 	}))
 }

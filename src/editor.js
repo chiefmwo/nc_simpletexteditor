@@ -37,10 +37,22 @@ function buildUI(container) {
       <button id="ste-replace-btn"     class="ste-btn">Ersetzen</button>
       <button id="ste-replace-all-btn" class="ste-btn">Alle ersetzen</button>
     </div>
+
+    <div class="ste-toolbar-group ste-exit-group">
+      <button id="ste-exit-btn" class="ste-btn" title="Schließen (Esc)" aria-label="Editor schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Schließen
+      </button>
+    </div>
   </div>
 
   <textarea id="ste-editor" class="ste-editor" spellcheck="false" autocorrect="off"
-            autocapitalize="off" wrap="off"></textarea>
+            autocapitalize="off" wrap="soft"></textarea>
 </div>`
 }
 
@@ -175,6 +187,7 @@ export function mountEditor(container) {
 	const replaceInput = document.getElementById('ste-replace-input')
 	const replaceBtn   = document.getElementById('ste-replace-btn')
 	const replAllBtn   = document.getElementById('ste-replace-all-btn')
+	const exitBtn      = document.getElementById('ste-exit-btn')
 
 	filenameLbl.textContent = fileName
 
@@ -205,11 +218,38 @@ export function mountEditor(container) {
 	saveBtn.addEventListener('click', doSave)
 	textarea.addEventListener('input', debouncedAutosave)
 
-	// Global Ctrl+S – stored for cleanup
+	// ── Exit (button + Escape key) ──────────────────────────────────────────
+	const exitEditor = async () => {
+		showStatus('Speichere…')
+		try {
+			await saver.save(textarea.value)
+		} catch {
+			// Best-effort save before navigating; ignore errors.
+		}
+		if (history.length > 1) {
+			history.back()
+		} else {
+			window.location.href = '/'
+		}
+	}
+	exitBtn.addEventListener('click', exitEditor)
+
+	// Global Ctrl+S and Escape – stored for cleanup
 	const onKeydown = (e) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault()
 			doSave()
+			return
+		}
+		if (e.key === 'Escape') {
+			// Inside a non-empty search field, clear it instead of exiting
+			if (document.activeElement === searchInput && searchInput.value) {
+				searchInput.value = ''
+				runSearch()
+				return
+			}
+			e.preventDefault()
+			exitEditor()
 		}
 	}
 	document.addEventListener('keydown', onKeydown)

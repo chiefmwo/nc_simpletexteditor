@@ -5,10 +5,11 @@ A modern, dark-themed plain-text editor for Nextcloud 30–33 with search, repla
 ## Features
 
 - Opens `text/plain` files directly in the browser via a Files context-menu action
-- Full-screen dark editor with JetBrains Mono font (bundled, no Google Fonts)
+- Full-screen dark editor using the system Courier New font (no external font fetches)
 - Incremental search with **Next / Previous** navigation
 - Optional **Replace** and **Replace all**
 - **Autosave** 1.5 s after the last keystroke, plus manual save (button or `Ctrl+S`)
+- Close the editor with the toolbar **Schließen** button or `Esc`
 - Pure PHP backend, no external PHP packages needed
 
 ---
@@ -63,6 +64,8 @@ The editor opens in the same browser tab.  Clicking the browser's Back button re
 | Key | Action |
 |-----|--------|
 | `Ctrl+S` / `⌘S` | Save |
+| `Esc` | Save and close the editor |
+| `Esc` in non-empty search box | Clear search |
 | `Enter` in search box | Next match |
 | `Shift+Enter` in search box | Previous match |
 
@@ -83,12 +86,11 @@ The editor opens in the same browser tab.  Clicking the browser's Back button re
 ```
 simpletexteditor/
 ├── appinfo/
+│   ├── app.php            # Registers the script-injection listener at request time
 │   ├── info.xml           # App metadata, NC version requirements
 │   └── routes.php         # URL → controller mapping
 ├── css/
-│   ├── editor.css         # Dark-theme stylesheet
-│   └── fonts/
-│       └── JetBrainsMono-Regular.woff2
+│   └── editor.css         # Dark-theme stylesheet
 ├── js/
 │   └── editor-bundle.js   # Pre-built standalone bundle (committed)
 ├── lib/

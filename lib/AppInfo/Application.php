@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace OCA\SimpleTextEditor\AppInfo;
 
-use OCA\Files\Event\LoadAdditionalScriptsEvent;
-use OCA\SimpleTextEditor\Listener\LoadAdditionalScriptsListener;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -20,15 +18,10 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        // Load our JS bundle whenever the Files app renders its file list,
-        // so the context-menu action is registered via the event bus.
-        $context->registerEventListener(
-            LoadAdditionalScriptsEvent::class,
-            LoadAdditionalScriptsListener::class
-        );
+        // Script injection for the Files page is handled in appinfo/app.php,
+        // which runs reliably on every request for active apps.
     }
 
     public function boot(IBootContext $context): void {
-        // Nothing to do at boot time.
     }
 }

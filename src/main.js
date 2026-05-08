@@ -8,15 +8,12 @@
 import { registerFilesPlugin } from './filesPlugin.js'
 import { mountEditor }         from './editor.js'
 
-// Register the Files action globally (runs in the Files app context)
 try {
 	registerFilesPlugin()
-} catch (e) {
-	// @nextcloud/files may not be available outside the Files app – that's fine.
-	console.debug('[simpletexteditor] filesPlugin skipped:', e.message)
+} catch {
+	// Not loaded inside the Files app — safe to ignore.
 }
 
-// Mount the editor when the dedicated view is loaded
 document.addEventListener('DOMContentLoaded', () => {
 	const container = document.getElementById('ste-app')
 	if (container) {

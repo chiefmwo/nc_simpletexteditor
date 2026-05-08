@@ -55,20 +55,31 @@ export function registerFilesPlugin() {
 		order: -1000,
 	}))
 
-	// Diagnose: is our action in the *same* registry the Files app reads from?
-	// If we see only "simpletexteditor-open" here, our bundle has its own
-	// private @nextcloud/files singleton and the Files app never sees us.
-	try {
-		const actions = getFileActions()
-		console.info('[simpletexteditor] registry contents (immediately):',
-			actions.map(a => a.id))
-
-		setTimeout(() => {
-			const later = getFileActions()
-			console.info('[simpletexteditor] registry contents (after 2s):',
-				later.map(a => a.id))
-		}, 2000)
-	} catch (e) {
-		console.warn('[simpletexteditor] could not inspect registry:', e)
+	// Diagnose where NC actually keeps its file actions.
+	const dump = (label) => {
+		try {
+			const fromApi = getFileActions().map(a => a.id)
+			const fromWindow = (typeof window !== 'undefined' && window._nc_fileactions)
+				? window._nc_fileactions.map(a => a.id ?? '<no-id>')
+				: '<absent>'
+			const ocaFiles = (typeof window !== 'undefined')
+				? Object.keys(window.OCA?.Files ?? {})
+				: '<absent>'
+			const windowKeys = (typeof window !== 'undefined')
+				? Object.keys(window).filter(k => /file|nc_|action/i.test(k))
+				: []
+			console.info(`[simpletexteditor] ${label}`, {
+				fromApi,
+				fromWindow,
+				ocaFiles,
+				windowKeys,
+			})
+		} catch (e) {
+			console.warn(`[simpletexteditor] ${label} failed:`, e)
+		}
 	}
+
+	dump('registry probe (immediately)')
+	setTimeout(() => dump('registry probe (after 2s)'), 2000)
+	setTimeout(() => dump('registry probe (after 5s)'), 5000)
 }

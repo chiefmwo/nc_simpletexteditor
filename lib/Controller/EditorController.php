@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\SimpleTextEditor\Controller;
 
 use OCA\SimpleTextEditor\AppInfo\Application;
+use OC\Security\CSP\ContentSecurityPolicyNonceManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -28,6 +29,7 @@ class EditorController extends Controller {
         private readonly IRootFolder $rootFolder,
         private readonly IUserSession $userSession,
         private readonly IURLGenerator $urlGenerator,
+        private readonly ContentSecurityPolicyNonceManager $nonceManager,
     ) {
         parent::__construct(Application::APP_ID, $request);
     }
@@ -79,6 +81,7 @@ class EditorController extends Controller {
                     Application::APP_ID,
                     'js/editor-bundle.js'
                 ),
+                'nonce'    => $this->nonceManager->getNonce(),
                 'token'    => \OCP\Util::callRegister(),
             ],
             TemplateResponse::RENDER_AS_BLANK

@@ -14,6 +14,7 @@ $loadUrl  = isset($_['loadUrl'])  ? htmlspecialchars($_['loadUrl'],  ENT_QUOTES 
 $saveUrl  = isset($_['saveUrl'])  ? htmlspecialchars($_['saveUrl'],  ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $cssUrl   = isset($_['cssUrl'])   ? htmlspecialchars($_['cssUrl'],   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $jsUrl    = isset($_['jsUrl'])    ? htmlspecialchars($_['jsUrl'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$nonce    = isset($_['nonce'])    ? htmlspecialchars($_['nonce'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $token    = isset($_['token'])    ? htmlspecialchars($_['token'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 ?>
 <!DOCTYPE html>
@@ -43,7 +44,7 @@ $token    = isset($_['token'])    ? htmlspecialchars($_['token'],    ENT_QUOTES 
 <?php endif; ?>
 
 <?php if ($jsUrl !== ''): ?>
-<script src="<?php echo $jsUrl; ?>"></script>
+<script src="<?php echo $jsUrl; ?>"<?php if ($nonce !== ''): ?> nonce="<?php echo $nonce; ?>"<?php endif; ?> defer></script>
 <?php endif; ?>
 
 </body>

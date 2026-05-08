@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\SimpleTextEditor\AppInfo;
 
+use OCA\Files\Event\LoadAdditionalScriptsEvent;
+use OCA\SimpleTextEditor\Listener\LoadAdditionalScriptsListener;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -18,8 +20,14 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        // Script injection for the Files page is handled in appinfo/app.php,
-        // which runs reliably on every request for active apps.
+        // Register the files-plugin script via the modern IBootstrap path.
+        // appinfo/app.php registers the same listener as a fallback for
+        // older NC versions where IBootstrap dispatch was unreliable.
+        // Util::addScript dedupes, so a duplicate registration is harmless.
+        $context->registerEventListener(
+            LoadAdditionalScriptsEvent::class,
+            LoadAdditionalScriptsListener::class
+        );
     }
 
     public function boot(IBootContext $context): void {

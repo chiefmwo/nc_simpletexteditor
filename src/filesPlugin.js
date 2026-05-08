@@ -7,7 +7,7 @@
  * the GitHub Actions CI workflow is required for this to work reliably.
  */
 
-import { registerFileAction, FileAction, Permission, DefaultType } from '@nextcloud/files'
+import { registerFileAction, FileAction, Permission, DefaultType, getFileActions } from '@nextcloud/files'
 import { generateUrl } from '@nextcloud/router'
 
 export function registerFilesPlugin() {
@@ -54,4 +54,21 @@ export function registerFilesPlugin() {
 		// Very low order to win against any other default action
 		order: -1000,
 	}))
+
+	// Diagnose: is our action in the *same* registry the Files app reads from?
+	// If we see only "simpletexteditor-open" here, our bundle has its own
+	// private @nextcloud/files singleton and the Files app never sees us.
+	try {
+		const actions = getFileActions()
+		console.info('[simpletexteditor] registry contents (immediately):',
+			actions.map(a => a.id))
+
+		setTimeout(() => {
+			const later = getFileActions()
+			console.info('[simpletexteditor] registry contents (after 2s):',
+				later.map(a => a.id))
+		}, 2000)
+	} catch (e) {
+		console.warn('[simpletexteditor] could not inspect registry:', e)
+	}
 }

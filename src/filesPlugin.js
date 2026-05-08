@@ -11,6 +11,7 @@ import { registerFileAction, FileAction, Permission, DefaultType } from '@nextcl
 import { generateUrl } from '@nextcloud/router'
 
 export function registerFilesPlugin() {
+	console.info('[simpletexteditor] registering FileAction')
 	registerFileAction(new FileAction({
 		id: 'simpletexteditor-open',
 

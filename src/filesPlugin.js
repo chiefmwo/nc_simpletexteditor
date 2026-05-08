@@ -2,17 +2,18 @@
  * Files plugin – registers the Simple Text Editor as the DEFAULT opener
  * for text/plain files in Nextcloud Files (API v4 / Nextcloud 30+).
  *
- * DefaultType.DEFAULT means the action fires on single click (not just
- * in the context menu).  A proper webpack build via `npm run build` or
- * the GitHub Actions CI workflow is required for this to work reliably.
+ * v4 API: actions are plain objects implementing IFileAction; all
+ * callbacks receive a destructured ActionContext with a `nodes` array.
+ * State is stored under window._nc_files_scope.v4_0, so the bundled
+ * @nextcloud/files MUST match the major version NC uses internally.
  */
 
-import { registerFileAction, FileAction, Permission, DefaultType, getFileActions } from '@nextcloud/files'
+import { registerFileAction, Permission, DefaultType, getFileActions } from '@nextcloud/files'
 import { generateUrl } from '@nextcloud/router'
 
 export function registerFilesPlugin() {
 	console.info('[simpletexteditor] registering FileAction')
-	registerFileAction(new FileAction({
+	registerFileAction({
 		id: 'simpletexteditor-open',
 
 		displayName: () => 'Mit Simple Text Editor bearbeiten',
@@ -26,7 +27,7 @@ export function registerFilesPlugin() {
 			</svg>`,
 
 		// Only show for text/* files the user may at least read
-		enabled(nodes) {
+		enabled({ nodes }) {
 			const ok = nodes
 				&& nodes.length === 1
 				&& nodes[0].mime?.startsWith('text/')
@@ -39,10 +40,11 @@ export function registerFilesPlugin() {
 			return !!ok
 		},
 
-		// Fires on file click (DefaultType.DEFAULT)
-		async exec(node) {
+		// Fires on single file click (DefaultType.DEFAULT)
+		async exec({ nodes }) {
+			const node = nodes?.[0]
 			const fileId = node?.fileid ?? node?.fileId
-			console.info('[simpletexteditor] exec() ->', { fileId, node })
+			console.info('[simpletexteditor] exec() ->', { fileId })
 			if (!fileId) return null
 			window.location.href = generateUrl(`/apps/simpletexteditor/edit/${fileId}`)
 			return null
@@ -53,26 +55,19 @@ export function registerFilesPlugin() {
 
 		// Very low order to win against any other default action
 		order: -1000,
-	}))
+	})
 
-	// Diagnose where NC actually keeps its file actions.
+	// Confirm the v4 scoped global is what we're talking to.
 	const dump = (label) => {
 		try {
 			const fromApi = getFileActions().map(a => a.id)
-			const fromWindow = (typeof window !== 'undefined' && window._nc_fileactions)
-				? window._nc_fileactions.map(a => a.id ?? '<no-id>')
+			const v4Scope = window?._nc_files_scope?.v4_0
+			const v4Actions = v4Scope?.fileActions
+				? [...v4Scope.fileActions.keys()]
 				: '<absent>'
-			const ocaFiles = (typeof window !== 'undefined')
-				? Object.keys(window.OCA?.Files ?? {})
-				: '<absent>'
-			const windowKeys = (typeof window !== 'undefined')
-				? Object.keys(window).filter(k => /file|nc_|action/i.test(k))
-				: []
 			console.info(`[simpletexteditor] ${label}`, {
 				fromApi,
-				fromWindow,
-				ocaFiles,
-				windowKeys,
+				v4Actions,
 			})
 		} catch (e) {
 			console.warn(`[simpletexteditor] ${label} failed:`, e)
@@ -81,5 +76,4 @@ export function registerFilesPlugin() {
 
 	dump('registry probe (immediately)')
 	setTimeout(() => dump('registry probe (after 2s)'), 2000)
-	setTimeout(() => dump('registry probe (after 5s)'), 5000)
 }

@@ -8,7 +8,7 @@
     "dev":   "webpack --mode development --watch"
   },
   "dependencies": {
-    "@nextcloud/files":  "^3.9.0",
+    "@nextcloud/files":  "^4.0.0",
     "@nextcloud/router": "^3.0.1"
   },
   "devDependencies": {

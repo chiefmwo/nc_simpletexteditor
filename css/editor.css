@@ -7,11 +7,61 @@
   padding: 0;
 }
 
+/* ── Theme variables ── */
+:root,
+:root[data-theme="light"] {
+  --ste-bg:                    #e8e8e8;
+  --ste-toolbar-bg:            #dcdcdc;
+  --ste-text:                  #1a1a1a;
+  --ste-text-muted:            #555555;
+  --ste-text-faint:            #888888;
+  --ste-border:                #c0c0c0;
+  --ste-input-bg:              #ffffff;
+  --ste-btn-bg:                #d4d4d4;
+  --ste-btn-bg-hover:          #c8c8c8;
+  --ste-btn-bg-active:         #b8b8b8;
+  --ste-accent:                #475569;
+  --ste-accent-hover:          #334155;
+  --ste-accent-fg:             #ffffff;
+  --ste-status-ok:             #16a34a;
+  --ste-status-error:          #dc2626;
+  --ste-selection:             rgba(71, 85, 105, 0.30);
+  --ste-focus-ring:            rgba(71, 85, 105, 0.30);
+  --ste-caret:                 #475569;
+  --ste-scrollbar-track:       #d4d4d4;
+  --ste-scrollbar-thumb:       #999999;
+  --ste-scrollbar-thumb-hover: #666666;
+}
+
+:root[data-theme="dark"] {
+  --ste-bg:                    #2b2b2b;
+  --ste-toolbar-bg:            #1f1f1f;
+  --ste-text:                  #e8e8e8;
+  --ste-text-muted:            #b0b0b0;
+  --ste-text-faint:            #777777;
+  --ste-border:                #3a3a3a;
+  --ste-input-bg:              #1a1a1a;
+  --ste-btn-bg:                #333333;
+  --ste-btn-bg-hover:          #404040;
+  --ste-btn-bg-active:         #2a2a2a;
+  --ste-accent:                #94a3b8;
+  --ste-accent-hover:          #cbd5e1;
+  --ste-accent-fg:             #1a1a1a;
+  --ste-status-ok:             #22c55e;
+  --ste-status-error:          #f87171;
+  --ste-selection:             rgba(148, 163, 184, 0.35);
+  --ste-focus-ring:            rgba(148, 163, 184, 0.30);
+  --ste-caret:                 #94a3b8;
+  --ste-scrollbar-track:       #1a1a1a;
+  --ste-scrollbar-thumb:       #404040;
+  --ste-scrollbar-thumb-hover: #555555;
+}
+
 /* Override Nextcloud body styles inside our full-page view */
 .ste-body,
 .ste-body #content,
 .ste-body #content-wrapper {
-  background: #121826;
+  background: var(--ste-bg);
   height: 100%;
   overflow: hidden;
 }
@@ -21,28 +71,34 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #121826;
-  color: #e5e7eb;
+  background: var(--ste-bg);
+  color: var(--ste-text);
   font-family: 'Courier New', Courier, 'Liberation Mono', monospace;
 }
 
 /* ── Toolbar ── */
 .ste-toolbar {
+  background: var(--ste-toolbar-bg);
+  border-bottom: 1px solid var(--ste-border);
+  flex-shrink: 0;
+}
+
+.ste-toolbar-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #1a2338;
-  border-bottom: 1px solid #2a3550;
-  flex-shrink: 0;
+  max-width: 1250px;
+  margin: 0 auto;
+  width: 100%;
   min-height: 52px;
 }
 
 .ste-filename {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--ste-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -70,10 +126,10 @@
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  border: 1px solid #2a3550;
+  border: 1px solid var(--ste-border);
   border-radius: 6px;
-  background: #1e2d45;
-  color: #cbd5e1;
+  background: var(--ste-btn-bg);
+  color: var(--ste-text);
   font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -81,32 +137,38 @@
 }
 
 .ste-btn:hover {
-  background: #263554;
-  border-color: #3b82f6;
+  background: var(--ste-btn-bg-hover);
+  border-color: var(--ste-accent);
 }
 
 .ste-btn:active {
-  background: #1a2e55;
+  background: var(--ste-btn-bg-active);
 }
 
 .ste-btn-primary {
-  background: #1d4ed8;
-  border-color: #3b82f6;
-  color: #fff;
+  background: var(--ste-accent);
+  border-color: var(--ste-accent);
+  color: var(--ste-accent-fg);
   font-weight: 600;
 }
 
 .ste-btn-primary:hover {
-  background: #2563eb;
+  background: var(--ste-accent-hover);
+  border-color: var(--ste-accent-hover);
 }
+
+/* ── Theme toggle: show only the icon for the OPPOSITE theme ── */
+.ste-theme-icon { display: inline-block; }
+:root[data-theme="light"] .ste-theme-icon-sun  { display: none; }
+:root[data-theme="dark"]  .ste-theme-icon-moon { display: none; }
 
 /* ── Inputs ── */
 .ste-input {
   padding: 5px 10px;
-  border: 1px solid #2a3550;
+  border: 1px solid var(--ste-border);
   border-radius: 6px;
-  background: #0f172a;
-  color: #e5e7eb;
+  background: var(--ste-input-bg);
+  color: var(--ste-text);
   font-size: 0.82rem;
   font-family: inherit;
   outline: none;
@@ -115,18 +177,18 @@
 }
 
 .ste-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  border-color: var(--ste-accent);
+  box-shadow: 0 0 0 2px var(--ste-focus-ring);
 }
 
 .ste-input::placeholder {
-  color: #475569;
+  color: var(--ste-text-faint);
 }
 
 /* ── Match info / status ── */
 .ste-match-info {
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--ste-text-faint);
   white-space: nowrap;
 }
 
@@ -136,16 +198,18 @@
   white-space: nowrap;
 }
 
-.ste-status-ok    { color: #22c55e; }
-.ste-status-error { color: #f87171; }
+.ste-status-ok    { color: var(--ste-status-ok); }
+.ste-status-error { color: var(--ste-status-error); }
 
 /* ── Editor textarea ── */
 .ste-editor {
   flex: 1;
   width: 100%;
+  max-width: 1250px;
+  align-self: center;
   padding: 16px 30px;
-  background: #161f2e;
-  color: #e5e7eb;
+  background: var(--ste-bg);
+  color: var(--ste-text);
   font-family: 'Courier New', Courier, 'Liberation Mono', monospace;
   font-size: 0.92rem;
   line-height: 1.65;
@@ -158,16 +222,16 @@
   word-wrap: break-word;
   overflow-y: auto;
   overflow-x: hidden;
-  caret-color: #3b82f6;
+  caret-color: var(--ste-caret);
 }
 
 .ste-editor:focus {
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.3);
+  box-shadow: inset 0 0 0 1px var(--ste-focus-ring);
 }
 
 /* ── Selection highlight ── */
 .ste-editor::selection {
-  background: rgba(59, 130, 246, 0.45);
+  background: var(--ste-selection);
 }
 
 /* ── Error banner ── */
@@ -175,15 +239,15 @@
   margin: 24px auto;
   max-width: 500px;
   padding: 16px 20px;
-  background: #450a0a;
-  border: 1px solid #dc2626;
+  background: var(--ste-input-bg);
+  border: 1px solid var(--ste-status-error);
   border-radius: 8px;
-  color: #fca5a5;
+  color: var(--ste-status-error);
   font-size: 0.9rem;
 }
 
 /* ── Scrollbars (Webkit) ── */
 .ste-editor::-webkit-scrollbar { width: 8px; height: 8px; }
-.ste-editor::-webkit-scrollbar-track { background: #121826; }
-.ste-editor::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 4px; }
-.ste-editor::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+.ste-editor::-webkit-scrollbar-track { background: var(--ste-scrollbar-track); }
+.ste-editor::-webkit-scrollbar-thumb { background: var(--ste-scrollbar-thumb); border-radius: 4px; }
+.ste-editor::-webkit-scrollbar-thumb:hover { background: var(--ste-scrollbar-thumb-hover); }

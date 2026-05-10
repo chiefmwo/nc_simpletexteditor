@@ -81,7 +81,10 @@ class EditorController extends Controller {
                     Application::APP_ID,
                     'js/editor-bundle.js'
                 ),
-                'faviconUrl' => $this->urlGenerator->linkTo('', 'favicon.ico'),
+                'faviconUrl' => $this->urlGenerator->linkToRoute(
+                    'theming.Icon.getFavicon',
+                    ['app' => 'core']
+                ),
                 'nonce'    => $this->nonceManager->getNonce(),
                 'token'    => \OCP\Util::callRegister(),
             ],

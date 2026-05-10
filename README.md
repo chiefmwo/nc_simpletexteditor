@@ -2,6 +2,10 @@
 
 A modern, dark-themed plain-text editor for Nextcloud 30–33 with search, replace and autosave.
 
+chief - May 10 2026: This NC-app has been mostly created by Claude and vibe coding as a test for it's coding capabilities and as a learning experience for myself. 
+The app is working and I'm using it on my live-server. I will revisit the code for more learning and out of curiousity but I'm not planning on extending the functionalities
+or anything. Bugfixes and updates will be made if it stops working for me. Feel free to copy whatever you like and adapt to your needs. Have fun!
+
 ## Features
 
 - Opens `text/plain` files directly in the browser via a Files context-menu action

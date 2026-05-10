@@ -26,16 +26,9 @@ function buildUI(container) {
         <span id="ste-status" class="ste-status" aria-live="polite"></span>
       </div>
 
-      <div class="ste-toolbar-group ste-search-group">
-        <input id="ste-search-input" class="ste-input" type="search" placeholder="Suchen…" aria-label="Suchen">
-        <button id="ste-prev-btn"  class="ste-btn" title="Vorheriger Treffer (Shift+Enter)" aria-label="Vorheriger Treffer">↑</button>
-        <button id="ste-next-btn"  class="ste-btn" title="Nächster Treffer (Enter)"         aria-label="Nächster Treffer">↓</button>
-        <span id="ste-match-info" class="ste-match-info" aria-live="polite"></span>
-      </div>
-
       <div class="ste-toolbar-group ste-replace-group">
+        <input id="ste-find-input"    class="ste-input" type="text" placeholder="Suchtext…"       aria-label="Suchtext">
         <input id="ste-replace-input" class="ste-input" type="text" placeholder="Ersetzen durch…" aria-label="Ersetzen durch">
-        <button id="ste-replace-btn"     class="ste-btn">Ersetzen</button>
         <button id="ste-replace-all-btn" class="ste-btn">Alle ersetzen</button>
       </div>
 
@@ -100,52 +93,6 @@ function setupThemeToggle(btn) {
 		document.documentElement.setAttribute('data-theme', next)
 		try { localStorage.setItem('ste-theme', next) } catch { /* ignore */ }
 	})
-}
-
-// ─── Search helpers ───────────────────────────────────────────────────────────
-
-function buildMatches(text, term) {
-	if (!term) return []
-	const matches = []
-	const lower = text.toLowerCase()
-	const lowerTerm = term.toLowerCase()
-	const termLen = lowerTerm.length
-	let idx = 0
-	while ((idx = lower.indexOf(lowerTerm, idx)) !== -1) {
-		matches.push(idx)
-		idx += termLen
-	}
-	return matches
-}
-
-function highlightMatch(textarea, matches, index, termLen) {
-	if (!matches.length || index < 0) return
-	const start = matches[index]
-	textarea.focus()
-	textarea.setSelectionRange(start, start + termLen)
-	// scrollTop estimation: avoid O(n) split by using the caret position
-	// natively exposed by the browser after setSelectionRange.
-	// We nudge scrollTop only when the caret is outside the visible area.
-	const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20
-	const visibleLines = Math.floor(textarea.clientHeight / lineHeight)
-	// Approximate line of the match without splitting the whole string:
-	// count newlines only up to `start` using lastIndexOf in a loop – still
-	// O(k) where k = match position, but avoids allocating a new array.
-	let linesBefore = 0
-	let pos = -1
-	while ((pos = textarea.value.indexOf('\n', pos + 1)) !== -1 && pos < start) {
-		linesBefore++
-	}
-	const targetScrollTop = Math.max(0, (linesBefore - Math.floor(visibleLines / 2)) * lineHeight)
-	textarea.scrollTop = targetScrollTop
-}
-
-function updateMatchInfo(el, matches, current) {
-	if (!matches.length) {
-		el.textContent = matches._searched ? '0 Treffer' : ''
-		return
-	}
-	el.textContent = `${current + 1} / ${matches.length}`
 }
 
 // ─── Autosave / debounce ──────────────────────────────────────────────────────
@@ -227,12 +174,8 @@ export function mountEditor(container) {
 	const filenameLbl  = document.getElementById('ste-filename')
 	const saveBtn      = document.getElementById('ste-save-btn')
 	const statusEl     = document.getElementById('ste-status')
-	const searchInput  = document.getElementById('ste-search-input')
-	const prevBtn      = document.getElementById('ste-prev-btn')
-	const nextBtn      = document.getElementById('ste-next-btn')
-	const matchInfo    = document.getElementById('ste-match-info')
+	const findInput    = document.getElementById('ste-find-input')
 	const replaceInput = document.getElementById('ste-replace-input')
-	const replaceBtn   = document.getElementById('ste-replace-btn')
 	const replAllBtn   = document.getElementById('ste-replace-all-btn')
 	const exitBtn      = document.getElementById('ste-exit-btn')
 	const themeBtn     = document.getElementById('ste-theme-btn')
@@ -240,9 +183,6 @@ export function mountEditor(container) {
 	filenameLbl.textContent = fileName
 
 	setupThemeToggle(themeBtn)
-
-	// Local search state – not shared across mounts
-	const state = { term: '', matches: [], current: -1 }
 
 	const showStatus = makeStatusShower(statusEl)
 	const saver = makeSaveFile(saveUrl, requestToken)
@@ -292,68 +232,19 @@ export function mountEditor(container) {
 			return
 		}
 		if (e.key === 'Escape') {
-			// Inside a non-empty search field, clear it instead of exiting
-			if (document.activeElement === searchInput && searchInput.value) {
-				searchInput.value = ''
-				runSearch()
-				return
-			}
 			e.preventDefault()
 			exitEditor()
 		}
 	}
 	document.addEventListener('keydown', onKeydown)
 
-	// ── Search (debounced 150 ms to avoid scanning on every keystroke) ──────
-	const runSearch = debounce(() => {
-		state.term    = searchInput.value
-		state.matches = buildMatches(textarea.value, state.term)
-		state.matches._searched = !!state.term
-		state.current = state.matches.length > 0 ? 0 : -1
-		if (state.current >= 0) highlightMatch(textarea, state.matches, state.current, state.term.length)
-		updateMatchInfo(matchInfo, state.matches, state.current)
-	}, 150)
-
-	searchInput.addEventListener('input', runSearch)
-	searchInput.addEventListener('keydown', e => {
-		if (e.key === 'Enter') { e.preventDefault(); e.shiftKey ? goPrev() : goNext() }
-	})
-
-	const goNext = () => {
-		if (!state.matches.length) return
-		state.current = (state.current + 1) % state.matches.length
-		highlightMatch(textarea, state.matches, state.current, state.term.length)
-		updateMatchInfo(matchInfo, state.matches, state.current)
-	}
-
-	const goPrev = () => {
-		if (!state.matches.length) return
-		state.current = (state.current - 1 + state.matches.length) % state.matches.length
-		highlightMatch(textarea, state.matches, state.current, state.term.length)
-		updateMatchInfo(matchInfo, state.matches, state.current)
-	}
-
-	nextBtn.addEventListener('click', goNext)
-	prevBtn.addEventListener('click', goPrev)
-
-	// ── Replace ─────────────────────────────────────────────────────────────
-	replaceBtn.addEventListener('click', () => {
-		if (!state.matches.length || state.current < 0) return
-		const start = state.matches[state.current]
-		const end   = start + state.term.length
-		const val   = textarea.value
-		textarea.value = val.substring(0, start) + replaceInput.value + val.substring(end)
-		runSearch()
-		debouncedAutosave()
-	})
-
+	// ── Replace all ─────────────────────────────────────────────────────────
 	replAllBtn.addEventListener('click', () => {
-		if (!state.term) return
-		// Compile the regex once per click (not in a loop)
-		const escaped = state.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+		const term = findInput.value
+		if (!term) return
+		const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 		const re = new RegExp(escaped, 'gi')
 		textarea.value = textarea.value.replace(re, replaceInput.value)
-		runSearch()
 		debouncedAutosave()
 	})
 

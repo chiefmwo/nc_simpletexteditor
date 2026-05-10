@@ -12,8 +12,9 @@ $fileName = isset($_['fileName']) ? htmlspecialchars($_['fileName'], ENT_QUOTES 
 $error    = isset($_['error'])    ? htmlspecialchars($_['error'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $loadUrl  = isset($_['loadUrl'])  ? htmlspecialchars($_['loadUrl'],  ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $saveUrl  = isset($_['saveUrl'])  ? htmlspecialchars($_['saveUrl'],  ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
-$cssUrl   = isset($_['cssUrl'])   ? htmlspecialchars($_['cssUrl'],   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
-$jsUrl    = isset($_['jsUrl'])    ? htmlspecialchars($_['jsUrl'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$cssUrl     = isset($_['cssUrl'])     ? htmlspecialchars($_['cssUrl'],     ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$jsUrl      = isset($_['jsUrl'])      ? htmlspecialchars($_['jsUrl'],      ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+$faviconUrl = isset($_['faviconUrl']) ? htmlspecialchars($_['faviconUrl'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $nonce    = isset($_['nonce'])    ? htmlspecialchars($_['nonce'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 $token    = isset($_['token'])    ? htmlspecialchars($_['token'],    ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
 ?>
@@ -23,6 +24,9 @@ $token    = isset($_['token'])    ? htmlspecialchars($_['token'],    ENT_QUOTES 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo $fileName; ?> – Simple Text Editor</title>
+    <?php if ($faviconUrl !== ''): ?>
+    <link rel="icon" href="<?php echo $faviconUrl; ?>">
+    <?php endif; ?>
     <?php if ($cssUrl !== ''): ?>
     <link rel="stylesheet" href="<?php echo $cssUrl; ?>">
     <?php endif; ?>

@@ -112,7 +112,7 @@
   gap: 6px;
 }
 
-.ste-search-group {
+.ste-replace-group {
   flex-grow: 1;
 }
 
@@ -185,13 +185,7 @@
   color: var(--ste-text-faint);
 }
 
-/* ── Match info / status ── */
-.ste-match-info {
-  font-size: 0.78rem;
-  color: var(--ste-text-faint);
-  white-space: nowrap;
-}
-
+/* ── Status ── */
 .ste-status {
   font-size: 0.78rem;
   transition: color 0.2s;
